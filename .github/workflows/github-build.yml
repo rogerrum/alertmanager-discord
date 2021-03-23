@@ -21,7 +21,7 @@ jobs:
           ref: ${{ github.ref }}
 
       - name: Set Docker Tag
-        run: echo ::set-env name=TAG::${GITHUB_REF/refs\/tags\//}
+        run: echo "TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
       - name: Docker login
         uses: azure/docker-login@v1
