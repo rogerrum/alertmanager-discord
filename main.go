@@ -117,6 +117,7 @@ var (
 	listenAddress = flag.String("listen.address", os.Getenv("LISTEN_ADDRESS"), "Address:Port to listen on.")
 	username      = flag.String("username", os.Getenv("DISCORD_USERNAME"), "Overrides the predefined username of the webhook.")
 	avatarURL     = flag.String("avatar.url", os.Getenv("DISCORD_AVATAR_URL"), "Overrides the predefined avatar of the webhook.")
+	verboseMode   = flag.String("verbose", os.Getenv("VERBOSE"), "Verbose mode")
 )
 
 func checkWebhookURL(webhookURL string) {
@@ -191,6 +192,11 @@ func sendWebhook(alertManagerData *AlertManagerData) {
 		}
 
 		discordMessageBytes, _ := json.Marshal(discordMessage)
+
+		if *verboseMode == "ON" {
+			log.Printf("Sending weebhok message to Discord: %s", string(discordMessageBytes))
+		}
+
 		http.Post(*webhookURL, "application/json", bytes.NewReader(discordMessageBytes))
 	}
 }
@@ -285,29 +291,35 @@ func main() {
 	}
 
 	log.Printf("Listening on: %s", *listenAddress)
-	http.ListenAndServe(*listenAddress, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s - [%s] %s", r.Host, r.Method, r.URL.RawPath)
+	log.Fatal(http.ListenAndServe(*listenAddress, http.HandlerFunc(handleWebHook)))
+}
 
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			panic(err)
-		}
+func handleWebHook(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s - [%s] %s", r.Host, r.Method, r.URL.RawPath)
 
-		alertManagerData := AlertManagerData{}
-		err = json.Unmarshal(body, &alertManagerData)
-		if err != nil {
-			if isRawPromAlert(body) {
-				sendRawPromAlertWarn()
-				return
-			}
-			if len(body) > 1024 {
-				log.Printf("Failed to unpack inbound alert request - %s...", string(body[:1023]))
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
 
-			} else {
-				log.Printf("Failed to unpack inbound alert request - %s", string(body))
-			}
+	if *verboseMode == "ON" {
+		log.Printf("request payload: %s", string(body))
+	}
+
+	alertManagerData := AlertManagerData{}
+	err = json.Unmarshal(body, &alertManagerData)
+	if err != nil {
+		if isRawPromAlert(body) {
+			sendRawPromAlertWarn()
 			return
 		}
-		sendWebhook(&alertManagerData)
-	}))
+		if len(body) > 1024 {
+			log.Printf("Failed to unpack inbound alert request - %s...", string(body[:1023]))
+
+		} else {
+			log.Printf("Failed to unpack inbound alert request - %s", string(body))
+		}
+		return
+	}
+	sendWebhook(&alertManagerData)
 }
