@@ -2,6 +2,15 @@ Alertmanager Discord Webhook
 ========
 
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/rogerrum/alertmanager-discord)](https://hub.docker.com/r/rogerrum/alertmanager-discord/tags)
+[![license](https://img.shields.io/github/license/rogerrum/alertmanager-discord)](https://github.com/rogerrum/alertmanager-discord/blob/main/LICENSE)
+[![DockerHub pulls](https://img.shields.io/docker/pulls/rogerrum/alertmanager-discord.svg)](https://hub.docker.com/r/rogerrum/alertmanager-discord/)
+[![DockerHub stars](https://img.shields.io/docker/stars/rogerrum/alertmanager-discord.svg)](https://hub.docker.com/r/rogerrum/alertmanager-discord/)
+[![GitHub stars](https://img.shields.io/github/stars/rogerrum/alertmanager-discord.svg)](https://github.com/rogerrum/alertmanager-discord)
+[![Contributors](https://img.shields.io/github/contributors/rogerrum/alertmanager-discord.svg)](https://github.com/rogerrum/alertmanager-discord/graphs/contributors)
+[![Paypal](https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal)](https://www.paypal.com/donate/?business=CRVGAN4YGG9KL&no_recurring=0&item_name=rogerrum&currency_code=USD)
+
+
+
 
 A minimal docker image with golang application, which listens for Prometheus Alertmanager's notifications and pushes them to Discord channel.
 
