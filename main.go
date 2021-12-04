@@ -187,7 +187,7 @@ func sendWebhook(alertManagerData *AlertManagerData) {
 			}
 		}
 
-		if len(embeds) > 1 {
+		if len(embeds) > 0 {
 			log.Printf("Sending last chunk of data to discord")
 			postMessageToDiscord(alertManagerData, status, color, embeds)
 		}
