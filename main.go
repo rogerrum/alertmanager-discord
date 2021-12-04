@@ -111,6 +111,7 @@ type DiscordEmbedField struct {
 }
 
 const defaultListenAddress = "127.0.0.1:9094"
+const discordEmbedLimit = 10
 
 var (
 	webhookURL    = flag.String("webhook.url", os.Getenv("DISCORD_WEBHOOK"), "Discord WebHook URL.")
@@ -145,23 +146,11 @@ func sendWebhook(alertManagerData *AlertManagerData) {
 
 	for status, alerts := range groupedAlerts {
 
-		discordMessage := DiscordMessage{}
-
-		addOverrideFields(&discordMessage)
-
 		color := findColor(status)
 
-		messageHeader := DiscordEmbed{
-			Title:  fmt.Sprintf("[%s:%d] %s", strings.ToUpper(status), len(alerts), getAlertName(alertManagerData)),
-			URL:    alertManagerData.ExternalURL,
-			Color:  color,
-			Fields: DiscordEmbedFields{},
-		}
+		embeds := DiscordEmbeds{}
 
-		discordMessage.Embeds = DiscordEmbeds{messageHeader}
-
-		for _, alert := range alerts {
-
+		for indx, alert := range alerts {
 			embedAlertMessage := DiscordEmbed{
 				Title:  getAlertTitle(&alert),
 				Color:  color,
@@ -188,17 +177,56 @@ func sendWebhook(alertManagerData *AlertManagerData) {
 				Name:  "*Details:*",
 				Value: getFormattedLabels(alert.Labels),
 			})
-			discordMessage.Embeds = append(discordMessage.Embeds, embedAlertMessage)
+			embeds = append(embeds, embedAlertMessage)
+
+			//Check if number of embeds are greater than discord limit and push to discord
+			if (indx+1)%(discordEmbedLimit-1) == 0 {
+				log.Printf("Sending chunk of data to discord")
+				postMessageToDiscord(alertManagerData, status, color, embeds)
+				embeds = DiscordEmbeds{}
+			}
 		}
 
-		discordMessageBytes, _ := json.Marshal(discordMessage)
-
-		if *verboseMode == "ON" {
-			log.Printf("Sending weebhok message to Discord: %s", string(discordMessageBytes))
+		if len(embeds) > 1 {
+			log.Printf("Sending last chunk of data to discord")
+			postMessageToDiscord(alertManagerData, status, color, embeds)
 		}
-
-		http.Post(*webhookURL, "application/json", bytes.NewReader(discordMessageBytes))
 	}
+}
+
+func postMessageToDiscord(alertManagerData *AlertManagerData, status string, color int, embeds DiscordEmbeds) {
+	discordMessage := buildDiscordMessage(alertManagerData, status, len(embeds), color)
+	discordMessage.Embeds = append(discordMessage.Embeds, embeds...)
+	discordMessageBytes, _ := json.Marshal(discordMessage)
+	if *verboseMode == "ON" || *verboseMode == "true" {
+		log.Printf("Sending weebhok message to Discord: %s", string(discordMessageBytes))
+	}
+	response, err := http.Post(*webhookURL, "application/json", bytes.NewReader(discordMessageBytes))
+	if err != nil {
+		log.Printf(fmt.Sprint(err))
+	}
+	// Success is indicated with 2xx status codes:
+	statusOK := response.StatusCode >= 200 && response.StatusCode < 300
+	if !statusOK {
+		responseData, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Printf(fmt.Sprint(err))
+		}
+		log.Printf("Weebhok message to Discord failed: %s", string(responseData))
+	}
+}
+
+func buildDiscordMessage(alertManagerData *AlertManagerData, status string, numberOfAlerts int, color int) DiscordMessage {
+	discordMessage := DiscordMessage{}
+	addOverrideFields(&discordMessage)
+	messageHeader := DiscordEmbed{
+		Title:  fmt.Sprintf("[%s:%d] %s", strings.ToUpper(status), numberOfAlerts, getAlertName(alertManagerData)),
+		URL:    alertManagerData.ExternalURL,
+		Color:  color,
+		Fields: DiscordEmbedFields{},
+	}
+	discordMessage.Embeds = DiscordEmbeds{messageHeader}
+	return discordMessage
 }
 
 func addOverrideFields(discordMessage *DiscordMessage) {
