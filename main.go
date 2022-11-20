@@ -85,6 +85,10 @@ func (kv KV) SortedPairs() Pairs {
 // Alerts is a list of Alert objects.
 type AlertManagerAlerts []AlertManagerAlert
 
+type DiscordEmbedFooter struct {
+	Text string `json:"text"`
+}
+
 type DiscordMessage struct {
 	Content   string        `json:"content"`
 	Username  string        `json:"username"`
@@ -95,11 +99,13 @@ type DiscordMessage struct {
 type DiscordEmbeds []DiscordEmbed
 
 type DiscordEmbed struct {
-	Title       string             `json:"title"`
-	Description string             `json:"description"`
-	URL         string             `json:"url"`
-	Color       int                `json:"color"`
-	Fields      DiscordEmbedFields `json:"fields"`
+	Title       string              `json:"title"`
+	Description string              `json:"description"`
+	URL         string              `json:"url"`
+	Color       int                 `json:"color"`
+	Fields      DiscordEmbedFields  `json:"fields"`
+	Footer      *DiscordEmbedFooter `json:"footer,omitempty"`
+	Timestamp   *time.Time          `json:"timestamp,omitempty"`
 }
 
 type DiscordEmbedFields []DiscordEmbedField
@@ -130,7 +136,7 @@ func checkWebhookURL(webhookURL string) {
 		log.Fatalf("The Discord WebHook URL doesn't seem to be a valid URL.")
 	}
 
-	re := regexp.MustCompile(`https://discord(?:app)?.com/api/webhooks/[0-9]{18}/[a-zA-Z0-9_-]+`)
+	re := regexp.MustCompile(`https://discord(?:app)?.com/api/webhooks/[0-9]{18,19}/[a-zA-Z0-9_-]+`)
 	if ok := re.Match([]byte(webhookURL)); !ok {
 		log.Printf("The Discord WebHook URL doesn't seem to be valid.")
 	}
@@ -177,6 +183,13 @@ func sendWebhook(alertManagerData *AlertManagerData) {
 				Name:  "*Details:*",
 				Value: getFormattedLabels(alert.Labels),
 			})
+			if *username != "" {
+				footer := DiscordEmbedFooter{}
+				footer.Text = *username
+				embedAlertMessage.Footer = &footer
+				currentTime := time.Now()
+				embedAlertMessage.Timestamp = &currentTime
+			}
 			embeds = append(embeds, embedAlertMessage)
 
 			//Check if number of embeds are greater than discord limit and push to discord
