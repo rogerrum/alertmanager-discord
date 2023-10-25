@@ -141,6 +141,15 @@ func checkWebhookURL(webhookURL string) {
 		log.Printf("The Discord WebHook URL doesn't seem to be valid.")
 	}
 }
+func checkDiscordUserName(discordUserName string) {
+	if discordUserName == "" {
+		log.Fatalf("Environment variable 'DISCORD_USERNAME' or CLI parameter 'username' not found.")
+	}
+	_, err := url.Parse(discordUserName)
+	if err != nil {
+		log.Fatalf("The Discord UserName doesn't seem to be a valid.")
+	}
+}
 
 func sendWebhook(alertManagerData *AlertManagerData) {
 
@@ -326,6 +335,7 @@ func sendRawPromAlertWarn() {
 func main() {
 	flag.Parse()
 	checkWebhookURL(*webhookURL)
+	checkDiscordUserName(*username)
 
 	if *listenAddress == "" {
 		*listenAddress = defaultListenAddress

@@ -25,8 +25,9 @@ Give this a webhook (with the DISCORD_WEBHOOK environment variable) and point it
 ## Environment configuration variables
 ```properties
 DISCORD_WEBHOOK=<webhook, where to post alerts. For more details see: https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks>
-DISCORD_USERNAME=<override bot name at Discord (optional)>
+DISCORD_USERNAME=<override bot name at Discord>
 DISCORD_AVATAR_URL=<override avatar url at Discord (optional)>
+LISTEN_ADDRESS=<address and port to listen on (default:127.0.0.1:9094)>
 VERBOSE=ON <(Optional - logs request and response)>
 ```
 
