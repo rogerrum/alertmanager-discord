@@ -1,3 +1,3 @@
 module github.com/rogerrum/alertmanager-discord
 
-go 1.19
+go 1.21

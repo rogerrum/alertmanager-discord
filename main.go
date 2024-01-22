@@ -120,26 +120,32 @@ const defaultListenAddress = "127.0.0.1:9094"
 const discordEmbedLimit = 10
 
 var (
-	webhookURL    = flag.String("webhook.url", os.Getenv("DISCORD_WEBHOOK"), "Discord WebHook URL.")
-	listenAddress = flag.String("listen.address", os.Getenv("LISTEN_ADDRESS"), "Address:Port to listen on.")
-	username      = flag.String("username", os.Getenv("DISCORD_USERNAME"), "Overrides the predefined username of the webhook.")
-	avatarURL     = flag.String("avatar.url", os.Getenv("DISCORD_AVATAR_URL"), "Overrides the predefined avatar of the webhook.")
-	verboseMode   = flag.String("verbose", os.Getenv("VERBOSE"), "Verbose mode")
+	webhookURL               = flag.String("webhook.url", os.Getenv("DISCORD_WEBHOOK"), "Discord WebHook URL.")
+	additionalWebhookURLFlag = flag.String("additionalWebhook.urls", os.Getenv("ADDITIONAL_DISCORD_WEBHOOKS"), "Additional Discord WebHook URLs.")
+	listenAddress            = flag.String("listen.address", os.Getenv("LISTEN_ADDRESS"), "Address:Port to listen on.")
+	username                 = flag.String("username", os.Getenv("DISCORD_USERNAME"), "Overrides the predefined username of the webhook.")
+	avatarURL                = flag.String("avatar.url", os.Getenv("DISCORD_AVATAR_URL"), "Overrides the predefined avatar of the webhook.")
+	verboseMode              = flag.String("verbose", os.Getenv("VERBOSE"), "Verbose mode")
+	additionalWebhookURLs    []string
 )
 
-func checkWebhookURL(webhookURL string) {
+func checkWebhookURL(webhookURL string) bool {
 	if webhookURL == "" {
 		log.Fatalf("Environment variable 'DISCORD_WEBHOOK' or CLI parameter 'webhook.url' not found.")
+		return false
 	}
 	_, err := url.Parse(webhookURL)
 	if err != nil {
 		log.Fatalf("The Discord WebHook URL doesn't seem to be a valid URL.")
+		return false
 	}
 
 	re := regexp.MustCompile(`https://discord(?:app)?.com/api/webhooks/[0-9]{18,19}/[a-zA-Z0-9_-]+`)
 	if ok := re.Match([]byte(webhookURL)); !ok {
 		log.Printf("The Discord WebHook URL doesn't seem to be valid.")
+		return false
 	}
+	return true
 }
 func checkDiscordUserName(discordUserName string) {
 	if discordUserName == "" {
@@ -221,9 +227,16 @@ func postMessageToDiscord(alertManagerData *AlertManagerData, status string, col
 	discordMessage.Embeds = append(discordMessage.Embeds, embeds...)
 	discordMessageBytes, _ := json.Marshal(discordMessage)
 	if *verboseMode == "ON" || *verboseMode == "true" {
-		log.Printf("Sending weebhok message to Discord: %s", string(discordMessageBytes))
+		log.Printf("Sending webhook message to Discord: %s", string(discordMessageBytes))
 	}
-	response, err := http.Post(*webhookURL, "application/json", bytes.NewReader(discordMessageBytes))
+	sendToWebhook(*webhookURL, discordMessageBytes)
+	for _, webhook := range additionalWebhookURLs {
+		sendToWebhook(webhook, discordMessageBytes)
+	}
+}
+
+func sendToWebhook(webHook string, discordMessageBytes []byte) {
+	response, err := http.Post(webHook, "application/json", bytes.NewReader(discordMessageBytes))
 	if err != nil {
 		log.Printf(fmt.Sprint(err))
 	}
@@ -234,7 +247,7 @@ func postMessageToDiscord(alertManagerData *AlertManagerData, status string, col
 		if err != nil {
 			log.Printf(fmt.Sprint(err))
 		}
-		log.Printf("Weebhok message to Discord failed: %s", string(responseData))
+		log.Printf("Webhook message to Discord failed: %s", string(responseData))
 	}
 }
 
@@ -293,6 +306,11 @@ func findColor(status string) int {
 	return color
 }
 
+func isNotBlankOrEmpty(str string) bool {
+	re := regexp.MustCompile(`\S+`)
+	return re.MatchString(str)
+}
+
 func getAlertName(alertManagerData *AlertManagerData) string {
 	if alertManagerData.CommonAnnotations["summary"] != "" {
 		return alertManagerData.CommonAnnotations["summary"]
@@ -335,6 +353,11 @@ func sendRawPromAlertWarn() {
 func main() {
 	flag.Parse()
 	checkWebhookURL(*webhookURL)
+	for _, additionalWebhook := range strings.Split(*additionalWebhookURLFlag, ",") {
+		if isNotBlankOrEmpty(additionalWebhook) && checkWebhookURL(additionalWebhook) {
+			additionalWebhookURLs = append(additionalWebhookURLs, additionalWebhook)
+		}
+	}
 	checkDiscordUserName(*username)
 
 	if *listenAddress == "" {
