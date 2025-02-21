@@ -178,22 +178,20 @@ func sendWebhook(alertManagerData *AlertManagerData) {
 				Fields: DiscordEmbedFields{},
 			}
 
-			if alert.Annotations["summary"] != "" {
-				embedAlertMessage.Fields = append(embedAlertMessage.Fields, DiscordEmbedField{
-					Name:  "*Summary:*",
-					Value: alert.Annotations["summary"],
-				})
-			} else if alert.Annotations["message"] != "" {
+			if alert.Annotations["message"] != "" {
 				embedAlertMessage.Fields = append(embedAlertMessage.Fields, DiscordEmbedField{
 					Name:  "*Message:*",
 					Value: alert.Annotations["message"],
 				})
-			} else if alert.Annotations["description"] != "" {
+			}
+
+			if alert.Annotations["description"] != "" {
 				embedAlertMessage.Fields = append(embedAlertMessage.Fields, DiscordEmbedField{
 					Name:  "*Description:*",
 					Value: alert.Annotations["description"],
 				})
 			}
+
 			embedAlertMessage.Fields = append(embedAlertMessage.Fields, DiscordEmbedField{
 				Name:  "*Details:*",
 				Value: getFormattedLabels(alert.Labels),
@@ -276,7 +274,7 @@ func addOverrideFields(discordMessage *DiscordMessage) {
 func getFormattedLabels(labels KV) string {
 	var builder strings.Builder
 	for _, pair := range labels.SortedPairs() {
-		builder.WriteString(fmt.Sprintf(" • *%s:* `%s`\n", pair.Name, pair.Value))
+		builder.WriteString(fmt.Sprintf("• *%s:* `%s`\n", pair.Name, pair.Value))
 	}
 	if builder.Len() == 0 {
 		builder.WriteString("-")
@@ -286,9 +284,8 @@ func getFormattedLabels(labels KV) string {
 
 func getAlertTitle(alertManagerAlert *AlertManagerAlert) string {
 	var builder strings.Builder
-	builder.WriteString("*Alert:*")
-	builder.WriteString(alertManagerAlert.Annotations["title"])
-
+	builder.WriteString("*Alert:* ")
+	builder.WriteString(alertManagerAlert.Annotations["summary"])
 	if alertManagerAlert.Labels["severity"] != "" {
 		builder.WriteString(" - ")
 		builder.WriteString(fmt.Sprintf("`%s`", alertManagerAlert.Labels["severity"]))
@@ -312,15 +309,29 @@ func isNotBlankOrEmpty(str string) bool {
 }
 
 func getAlertName(alertManagerData *AlertManagerData) string {
-	if alertManagerData.CommonAnnotations["summary"] != "" {
-		return alertManagerData.CommonAnnotations["summary"]
-	} else if alertManagerData.CommonAnnotations["message"] != "" {
-		return alertManagerData.CommonAnnotations["message"]
-	} else if alertManagerData.CommonAnnotations["description"] != "" {
-		return alertManagerData.CommonAnnotations["description"]
+	icon := ""
+	if alertManagerData.Status == "firing" {
+		if alertManagerData.CommonLabels["severity"] == "critical" {
+			icon = "🔥 "
+		} else if alertManagerData.CommonLabels["severity"] == "warning" {
+			icon = "⚠️ "
+		} else {
+			icon = "ℹ️ "
+		}
 	} else {
-		return alertManagerData.CommonLabels["alertname"]
+		icon = "💚 "
 	}
+
+	if alertManagerData.CommonAnnotations["summary"] != "" {
+		return icon + alertManagerData.CommonAnnotations["summary"]
+	}
+	if alertManagerData.CommonAnnotations["message"] != "" {
+		return icon + alertManagerData.CommonAnnotations["message"]
+	}
+	if alertManagerData.CommonAnnotations["description"] != "" {
+		return icon + alertManagerData.CommonAnnotations["description"]
+	}
+	return icon + alertManagerData.CommonLabels["alertname"]
 }
 
 func sendRawPromAlertWarn() {
