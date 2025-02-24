@@ -1,27 +1,24 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended",
+    "docker:enableMajor",
+    ":disableRateLimiting",
+    ":dependencyDashboard",
+    ":enablePreCommit",
+    ":semanticCommits",
+    ":automergeDigest",
+    ":automergeBranchPush"
   ],
   "enabled": true,
   "timezone": "America/Chicago",
-  "semanticCommits": "enabled",
-  "platform": "github",
-  "gitAuthor": "Roger Rumao <rogerrum@users.noreply.github.com>",
-  "repositories": [
-    "rogerrum/alertmanager-discord"
-  ],
-  "onboarding": false,
-  "requireConfig": "optional",
-  "commitBodyTable": true,
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "Renovate Dashboard",
-  "commitBody": "Signed-off-by: Roger Rumao <rogerrum@users.noreply.github.com>",
-  "suppressNotifications": [
-    "prIgnoreNotification"
-  ],
+  // Do not notify on closed unmerged PRs
+  "suppressNotifications": ["prIgnoreNotification"],
+  // Do not rebase PRs
   "rebaseWhen": "conflicted",
-  "commitMessageTopic": "{{depName}}",
-  "commitMessageExtra": "to {{newVersion}}",
-  "commitMessageSuffix": ""
+  "commitBodyTable": true,
+  "platformCommit": true,
+  "gitAuthor": "Roger Rumao <rogerrum@users.noreply.github.com>",
+  "commitBody": "Signed-off-by: Roger Rumao <rogerrum@users.noreply.github.com>"
 }
