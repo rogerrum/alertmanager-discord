@@ -1,24 +1,24 @@
 {
-  "extends": [
-    "config:recommended",
-    "docker:enableMajor",
-    ":disableRateLimiting",
-    ":dependencyDashboard",
-    ":enablePreCommit",
-    ":semanticCommits",
-    ":automergeDigest",
-    ":automergeBranchPush"
+  extends: [
+    'config:recommended',
+    'docker:enableMajor',
+    ':disableRateLimiting',
+    ':dependencyDashboard',
+    ':enablePreCommit',
+    ':semanticCommits',
+    ':automergeDigest',
+    ':automergeBranch',
   ],
-  "enabled": true,
-  "timezone": "America/Chicago",
-  "dependencyDashboard": true,
-  "dependencyDashboardTitle": "Renovate Dashboard",
-  // Do not notify on closed unmerged PRs
-  "suppressNotifications": ["prIgnoreNotification"],
-  // Do not rebase PRs
-  "rebaseWhen": "conflicted",
-  "commitBodyTable": true,
-  "platformCommit": true,
-  "gitAuthor": "Roger Rumao <rogerrum@users.noreply.github.com>",
-  "commitBody": "Signed-off-by: Roger Rumao <rogerrum@users.noreply.github.com>"
+  enabled: true,
+  timezone: 'America/Chicago',
+  dependencyDashboard: true,
+  dependencyDashboardTitle: 'Renovate Dashboard',
+  suppressNotifications: [
+    'prIgnoreNotification',
+  ],
+  rebaseWhen: 'conflicted',
+  commitBodyTable: true,
+  platformCommit: 'enabled',
+  gitAuthor: 'Roger Rumao <rogerrum@users.noreply.github.com>',
+  commitBody: 'Signed-off-by: Roger Rumao <rogerrum@users.noreply.github.com>',
 }
