@@ -15,6 +15,8 @@ Alertmanager Discord Webhook
 A minimal docker image with golang application, which listens for Prometheus Alertmanager's notifications and pushes them to Discord channel.
 
 Repository name in Docker Hub: **[rogerrum/alertmanager-discord](https://hub.docker.com/r/rogerrum/alertmanager-discord/)**  
+Repository name in ghcr.io: **[ghcr.io/rogerrum/alertmanager-discord](https://ghcr.io/rogerrum/alertmanager-discord)**
+
 Published via **automated build** mechanism  
 
 
