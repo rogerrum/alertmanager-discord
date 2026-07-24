@@ -375,8 +375,20 @@ func main() {
 		*listenAddress = defaultListenAddress
 	}
 
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", handleHealthz)
+	mux.HandleFunc("/", handleWebHook)
+
 	log.Printf("Listening on: %s", *listenAddress)
-	log.Fatal(http.ListenAndServe(*listenAddress, http.HandlerFunc(handleWebHook)))
+	log.Fatal(http.ListenAndServe(*listenAddress, mux))
+}
+
+func handleHealthz(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleWebHook(w http.ResponseWriter, r *http.Request) {
